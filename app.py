@@ -1,17 +1,30 @@
 import os
+import asyncio
+from flask import Flask
 from telethon import TelegramClient
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, CallbackContext
 from telegram.ext import ConversationHandler
-import asyncio
+from threading import Thread
 
-# Вставь сюда свои данные для бота
-api_id = 26071362  # Твой api_id
-api_hash = 'c3d12bc02851cde9de371fa1a919bd76'  # Твой api_hash
-bot_token = '7525592619:AAGJVfadSQFlR10qAxhVVtsm_xKxhJsmyFw'  # Токен твоего бота
+# Инициализация Flask
+app = Flask(__name__)
+
+# Ваши данные для подключения
+api_id = 26071362  # Замените на свой api_id
+api_hash = 'c3d12bc02851cde9de371fa1a919bd76'  # Замените на свой api_hash
+bot_token = '7525592619:AAGJVfadSQFlR10qAxhVVtsm_xKxhJsmyFw'  # Токен вашего бота
+
+# Инициализация клиента
+client = TelegramClient('session_name', api_id, api_hash)
 
 # Статусные переменные для пользователя
 TYPING_MESSAGE, TYPING_INTERVAL, TYPING_CHAT_ID, TYPING_PHONE, TYPING_CODE = range(5)
+
+# Flask route для проверки работы
+@app.route('/')
+def home():
+    return "Telegram Bot is running!"
 
 # Функция старта для бота
 def start(update: Update, context: CallbackContext):
@@ -56,7 +69,7 @@ def phone_number(update: Update, context: CallbackContext):
     update.message.reply_text('Спасибо! Я отправлю тебе код авторизации на твой телефон. Пожалуйста, введи его.')
     
     # Запуск авторизации через Telethon
-    asyncio.run(start_telethon_auth(update, context.user_data))
+    asyncio.create_task(start_telethon_auth(update, context.user_data))
     
     return TYPING_CODE
 
@@ -66,31 +79,19 @@ def code(update: Update, context: CallbackContext):
     update.message.reply_text('Спасибо за ввод кода! Теперь я начну работать.')
     
     # После того как код получен, отправляем сообщение
-    asyncio.run(send_message(context.user_data))
+    asyncio.create_task(send_message(context.user_data))
 
     return ConversationHandler.END
 
 # Функция для авторизации через Telethon
 async def start_telethon_auth(update, user_data):
-    client = TelegramClient('user_session', api_id, api_hash)
-    
-    # Авторизация через номер телефона
     await client.start(phone=user_data['phone'])
-    
-    # Отправка кода авторизации
     await client.send_code_request(user_data['phone'])
-    
-    # Ждем, что пользователь введет код
     update.message.reply_text("Я отправил код на ваш номер. Пожалуйста, введите его:")
 
 # Функция для отправки сообщений через Telethon
 async def send_message(user_data):
-    # Создание клиента Telethon для авторизации через номер телефона пользователя
-    client = TelegramClient('user_session', api_id, api_hash)
-    
-    # Вход в аккаунт пользователя
-    await client.start(phone=user_data['phone'])  # Пользователь вводит свой номер телефона
-    
+    await client.start(phone=user_data['phone'])
     chat_id = user_data['chat_id']
     message = user_data['message']
     interval = user_data['interval']
@@ -125,5 +126,17 @@ def main():
     # Запуск бота
     application.run_polling()
 
-if __name__ == '__main__':
-    main()
+# Запуск Flask в отдельном потоке
+def run_flask():
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
+
+if __name__ == "__main__":
+    # Запуск Flask в фоновом режиме
+    thread = Thread(target=run_flask)
+    thread.daemon = True
+    thread.start()
+
+    # Запуск Telegram клиента
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(main())
