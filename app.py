@@ -53,7 +53,7 @@ def chat_id(update: Update, context: CallbackContext):
 def phone_number(update: Update, context: CallbackContext):
     context.user_data['phone'] = update.message.text
     update.message.reply_text('Спасибо! Я отправлю тебе код авторизации на твой телефон. Пожалуйста, введи его.')
-
+    
     # Запуск авторизации через Telethon
     asyncio.run(start_telethon_auth(update, context.user_data))
     
@@ -81,10 +81,6 @@ async def start_telethon_auth(update, user_data):
     
     # Ждем, что пользователь введет код
     update.message.reply_text("Я отправил код на ваш номер. Пожалуйста, введите его:")
-    
-    # Ожидаем ввода кода от пользователя
-    code = await asyncio.to_thread(input, "Введите код: ")  # Здесь нужно заменить на асинхронное получение от пользователя
-    await client.sign_in(user_data['phone'], code)
 
 # Функция для отправки сообщений через Telethon
 async def send_message(user_data):
