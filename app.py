@@ -1,10 +1,9 @@
+import os
 from telethon import TelegramClient
-from flask import Flask, request
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, CallbackContext
 from telegram.ext import ConversationHandler
 import asyncio
-import logging
 
 # Вставь сюда свои данные для бота
 api_id = 26071362  # Твой api_id
@@ -13,12 +12,6 @@ bot_token = '7525592619:AAGJVfadSQFlR10qAxhVVtsm_xKxhJsmyFw'  # Токен тв�
 
 # Статусные переменные для пользователя
 TYPING_MESSAGE, TYPING_INTERVAL, TYPING_CHAT_ID, TYPING_PHONE, TYPING_CODE = range(5)
-
-# Создаем Flask приложение
-app = Flask(__name__)
-
-# Инициализация бота через Telegram API
-application = Application.builder().token(bot_token).build()
 
 # Функция старта для бота
 def start(update: Update, context: CallbackContext):
@@ -112,6 +105,9 @@ async def send_message(user_data):
 
 # Основная функция для запуска бота
 def main():
+    # Создание приложения
+    application = Application.builder().token(bot_token).build()
+    
     # Добавление обработчиков
     conv_handler = ConversationHandler(
         entry_points=[CommandHandler('start', start)],
@@ -124,17 +120,10 @@ def main():
         },
         fallbacks=[],
     )
-
     application.add_handler(conv_handler)
+    
+    # Запуск бота
     application.run_polling()
 
-# Flask route to handle Telegram webhook
-@app.route(f'/{bot_token}', methods=['POST'])
-def webhook():
-    update = Update.de_json(request.get_json(), application.bot)
-    application.process_update(update)
-    return 'OK', 200
-
 if __name__ == '__main__':
-    # Настройка Flask web сервера
-    app.run(host="0.0.0.0", port=int(os.environ.get('PORT', 5000)))
+    main()
