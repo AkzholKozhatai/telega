@@ -1,6 +1,6 @@
 from telethon import TelegramClient
 from telegram import Update
-from telegram.ext import Updater, CommandHandler, MessageHandler, filters, CallbackContext
+from telegram.ext import Application, CommandHandler, MessageHandler, filters, CallbackContext
 from telegram.ext import ConversationHandler
 import asyncio
 
@@ -104,11 +104,10 @@ async def send_message(user_data):
 
 # Основная функция для запуска бота
 def main():
-    # Создание бота
-    updater = Updater(bot_token, use_context=True)
+    # Создание приложения
+    application = Application.builder().token(bot_token).build()
     
     # Добавление обработчиков
-    dp = updater.dispatcher
     conv_handler = ConversationHandler(
         entry_points=[CommandHandler('start', start)],
         states={
@@ -120,11 +119,10 @@ def main():
         },
         fallbacks=[],
     )
-    dp.add_handler(conv_handler)
+    application.add_handler(conv_handler)
     
     # Запуск бота
-    updater.start_polling()
-    updater.idle()
+    application.run_polling()
 
 if __name__ == '__main__':
     main()
