@@ -27,60 +27,59 @@ def home():
     return "Telegram Bot is running!"
 
 # Функция старта для бота
-async def start(update: Update, context: CallbackContext):
-    await update.message.reply_text('Привет! Я помогу тебе настроить автоматическую отправку сообщений. '
-                                    'Введите сообщение, которое хотите отправлять:')
+def start(update: Update, context: CallbackContext):
+    update.message.reply_text('Привет! Я помогу тебе настроить автоматическую отправку сообщений. '
+                              'Введите сообщение, которое хотите отправлять:')
     return TYPING_MESSAGE
 
 # Обработка сообщения, которое будет отправлять бот
-async def message(update: Update, context: CallbackContext):
+def message(update: Update, context: CallbackContext):
     context.user_data['message'] = update.message.text
-    await update.message.reply_text(f'Отлично! Я буду отправлять сообщение: "{update.message.text}". '
-                                   'Теперь укажи интервал (в секундах) между сообщениями:')
+    update.message.reply_text(f'Отлично! Я буду отправлять сообщение: "{update.message.text}". '
+                              'Теперь укажи интервал (в секундах) между сообщениями:')
     return TYPING_INTERVAL
 
 # Обработка интервала времени
-async def interval(update: Update, context: CallbackContext):
+def interval(update: Update, context: CallbackContext):
     try:
         interval = int(update.message.text)
         context.user_data['interval'] = interval
-        await update.message.reply_text(f'Интервал установлен на {interval} секунд. '
-                                       'Теперь отправь мне ID чата, куда я должен отправлять сообщения:')
+        update.message.reply_text(f'Интервал установлен на {interval} секунд. '
+                                  'Теперь отправь мне ID чата, куда я должен отправлять сообщения:')
         return TYPING_CHAT_ID
     except ValueError:
-        await update.message.reply_text('Пожалуйста, введите число, которое будет интервалом в секундах.')
+        update.message.reply_text('Пожалуйста, введите число, которое будет интервалом в секундах.')
         return TYPING_INTERVAL
 
 # Обработка ID чата
-async def chat_id(update: Update, context: CallbackContext):
+def chat_id(update: Update, context: CallbackContext):
     try:
         chat_id = int(update.message.text)
         context.user_data['chat_id'] = chat_id
-        await update.message.reply_text(f'Чат ID установлен: {chat_id}. Я буду отправлять сообщение "{context.user_data["message"]}" '
-                                       f'каждые {context.user_data["interval"]} секунд.')
-        await update.message.reply_text('Теперь отправь мне номер телефона для авторизации (формат +1234567890):')
+        update.message.reply_text(f'Чат ID установлен: {chat_id}. Я буду отправлять сообщение "{context.user_data["message"]}" каждые {context.user_data["interval"]} секунд.')
+        update.message.reply_text('Теперь отправь мне номер телефона для авторизации (формат +1234567890):')
         return TYPING_PHONE
     except ValueError:
-        await update.message.reply_text('Пожалуйста, введите действительный ID чата.')
+        update.message.reply_text('Пожалуйста, введите действительный ID чата.')
         return TYPING_CHAT_ID
 
 # Обработка номера телефона пользователя
-async def phone_number(update: Update, context: CallbackContext):
+def phone_number(update: Update, context: CallbackContext):
     context.user_data['phone'] = update.message.text
-    await update.message.reply_text('Спасибо! Я отправлю тебе код авторизации на твой телефон. Пожалуйста, введи его.')
+    update.message.reply_text('Спасибо! Я отправлю тебе код авторизации на твой телефон. Пожалуйста, введи его.')
     
     # Запуск авторизации через Telethon
-    await start_telethon_auth(update, context.user_data)
+    asyncio.create_task(start_telethon_auth(update, context.user_data))
     
     return TYPING_CODE
 
 # Обработка кода, который пользователь введет из SMS
-async def code(update: Update, context: CallbackContext):
+def code(update: Update, context: CallbackContext):
     context.user_data['code'] = update.message.text
-    await update.message.reply_text('Спасибо за ввод кода! Теперь я начну работать.')
+    update.message.reply_text('Спасибо за ввод кода! Теперь я начну работать.')
     
     # После того как код получен, отправляем сообщение
-    await send_message(context.user_data)
+    asyncio.create_task(send_message(context.user_data))
 
     return ConversationHandler.END
 
@@ -88,7 +87,7 @@ async def code(update: Update, context: CallbackContext):
 async def start_telethon_auth(update, user_data):
     await client.start(phone=user_data['phone'])
     await client.send_code_request(user_data['phone'])
-    await update.message.reply_text("Я отправил код на ваш номер. Пожалуйста, введите его:")
+    update.message.reply_text("Я отправил код на ваш номер. Пожалуйста, введите его:")
 
 # Функция для отправки сообщений через Telethon
 async def send_message(user_data):
@@ -139,5 +138,4 @@ if __name__ == "__main__":
     thread.start()
 
     # Запуск Telegram клиента
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(main())
+    asyncio.run(main())
