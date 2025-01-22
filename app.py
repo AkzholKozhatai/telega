@@ -1,6 +1,6 @@
 from telethon import TelegramClient
 from telegram import Update
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
+from telegram.ext import Updater, CommandHandler, MessageHandler, filters, CallbackContext
 from telegram.ext import ConversationHandler
 import asyncio
 
@@ -116,11 +116,11 @@ def main():
     conv_handler = ConversationHandler(
         entry_points=[CommandHandler('start', start)],
         states={
-            TYPING_MESSAGE: [MessageHandler(Filters.text & ~Filters.command, message)],
-            TYPING_INTERVAL: [MessageHandler(Filters.text & ~Filters.command, interval)],
-            TYPING_CHAT_ID: [MessageHandler(Filters.text & ~Filters.command, chat_id)],
-            TYPING_PHONE: [MessageHandler(Filters.text & ~Filters.command, phone_number)],
-            TYPING_CODE: [MessageHandler(Filters.text & ~Filters.command, code)],
+            TYPING_MESSAGE: [MessageHandler(filters.TEXT & ~filters.COMMAND, message)],
+            TYPING_INTERVAL: [MessageHandler(filters.TEXT & ~filters.COMMAND, interval)],
+            TYPING_CHAT_ID: [MessageHandler(filters.TEXT & ~filters.COMMAND, chat_id)],
+            TYPING_PHONE: [MessageHandler(filters.TEXT & ~filters.COMMAND, phone_number)],
+            TYPING_CODE: [MessageHandler(filters.TEXT & ~filters.COMMAND, code)],
         },
         fallbacks=[],
     )
